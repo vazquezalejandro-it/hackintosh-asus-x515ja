@@ -1,325 +1,309 @@
-# 🍎 Hackintosh — ASUS VivoBook X515JA
+<div align="center">
 
-> **macOS Ventura 13 en dual boot con Windows 11 sobre un único disco SSD de 512 GB**  
-> Bootloader: OpenCore 0.8.8 · Periodo: 19–22 de marzo de 2026  
-> Autor: Alejandro Vázquez
+# Hackintosh · ASUS VivoBook X515JA
 
----
+**macOS Ventura 13 corriendo nativamente en hardware no Apple**  
+Dual Boot con Windows 11 · Un único disco SSD de 512 GB · Sin USB externo
 
-## ⚠️ Aviso Legal
+![macOS](https://img.shields.io/badge/macOS-Ventura_13-black?style=for-the-badge&logo=apple&logoColor=white)
+![OpenCore](https://img.shields.io/badge/OpenCore-0.8.8-blue?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-Funcional-success?style=for-the-badge)
+![CPU](https://img.shields.io/badge/CPU-Intel_Ice_Lake-0071C5?style=for-the-badge&logo=intel&logoColor=white)
+![Licencia](https://img.shields.io/badge/Uso-Solo_educativo-orange?style=for-the-badge)
 
-La instalación de macOS en hardware no oficial de Apple (Hackintosh) viola el acuerdo de licencia de usuario final (EULA) de Apple. Este repositorio tiene carácter **exclusivamente educativo y de documentación técnica personal**.
-
----
-
-## 📋 Tabla de Contenidos
-
-- [Resumen del Proyecto](#-resumen-del-proyecto)
-- [Hardware](#-hardware)
-- [Estado de Funcionalidades](#-estado-de-funcionalidades)
-- [Día 1 — Virtualización y Preparación del USB](#-día-1--jueves-19-de-marzo)
-- [Día 2 — Instalación de macOS y Primera Crisis](#-día-2--viernes-20-de-marzo)
-- [Día 3 — Reinstalación de Windows y Batalla con el WiFi](#-día-3--sábado-21-de-marzo)
-- [Aspectos Técnicos](#-aspectos-técnicos)
-- [Lecciones Aprendidas](#-lecciones-aprendidas)
-- [Herramientas Utilizadas](#-herramientas-utilizadas)
-- [Referencias](#-referencias)
+</div>
 
 ---
 
-## 🧠 Resumen del Proyecto
-
-Este proyecto nació de la curiosidad y el deseo de aprender. En 3 días se consiguió instalar **macOS Ventura 13 de forma nativa** en un portátil ASUS VivoBook X515JA con Intel Ice Lake, manteniendo un **dual boot estable con Windows 11** en el mismo disco SSD.
-
-El proceso implicó:
-- Virtualización de macOS en VMware como entorno de aprendizaje
-- Creación manual de USB booteable con OpenCore y `macrecovery.py`
-- Particionado del disco en caliente sin perder Windows 11
-- Resolución de **dos crisis críticas** que dejaron el sistema completamente inutilizable
-- Reinstalación completa de Windows 11 tras corrupción del gestor de arranque
+> ⚠️ **Aviso legal:** La instalación de macOS en hardware no oficial de Apple viola su EULA. Este repositorio tiene carácter **exclusivamente educativo y de documentación técnica personal.**
 
 ---
 
-## 💻 Hardware
+## ¿Qué es esto y por qué importa?
 
-### PC de escritorio (máquina host)
+En 3 días, partiendo de cero y sin guía específica para este modelo, se consiguió:
+
+- Instalar **macOS Ventura 13 de forma nativa** en un portátil ASUS con Intel Ice Lake
+- Mantener **dual boot estable con Windows 11** en el mismo disco, sin USB externo
+- Diagnosticar y resolver **dos crisis críticas** que dejaron el sistema completamente inutilizable
+- Reinstalar Windows 11 desde cero tras corrupción del gestor de arranque
+- Documentar cada decisión técnica, cada error y cada solución
+
+Este proyecto no es solo instalar un sistema operativo. Es **diagnóstico de hardware, análisis de compatibilidad, gestión de arranque EFI, recuperación de sistemas bloqueados y resolución de problemas bajo presión**, todo en un entorno real y sin red de seguridad.
+
+---
+
+## Hardware
+
+### Portátil objetivo
+
+| Componente | Especificación | Compatibilidad |
+|---|---|:---:|
+| **CPU** | Intel Core i7-1065G7 · Ice Lake · 10ª gen · 4C/8T · 1.3–3.9 GHz | ✅ Perfecta |
+| **GPU** | Intel Iris Plus Graphics (integrada) | ✅ Buena |
+| **Trackpad** | ELAN 1200 I2C | ✅ Buena |
+| **Audio** | Intel Smart Sound Technology | ✅ Buena |
+| **SSD** | Micron 2450 · 512 GB NVMe | ✅ Perfecta |
+| **WiFi** | Realtek 8821CE | ❌ Sin soporte |
+| **BIOS** | American Megatrends X515JAB.310 · UEFI | — |
+| **RAM** | 20 GB DDR4 3200 MHz | ✅ — |
+
+### Máquina host (entorno de trabajo)
 
 | Componente | Especificación |
 |---|---|
 | CPU | Intel Core i9-13900F |
 | RAM | 32 GB DDR5 |
 | GPU | NVIDIA RTX 5060 |
-| Almacenamiento | 2 TB SSD NVMe |
-| Sistema Operativo | Windows 11 Enterprise |
-
-### Portátil objetivo (ASUS VivoBook X515JA)
-
-| Componente | Especificación | Compatibilidad macOS |
-|---|---|---|
-| CPU | Intel Core i7-1065G7 (Ice Lake, 10ª gen) | ✅ PERFECTA |
-| GPU | Intel Iris Plus Graphics (integrada) | ✅ BUENA |
-| Trackpad | ELAN 1200 I2C | ✅ BUENA |
-| Audio | Intel Smart Sound | ✅ BUENA |
-| SSD | Micron 2450 512 GB NVMe | ✅ PERFECTA |
-| WiFi | Realtek 8821CE | ❌ INCOMPATIBLE |
-| BIOS | American Megatrends X515JAB.310 (UEFI) | — |
+| SO | Windows 11 Enterprise |
 
 ---
 
-## ✅ Estado de Funcionalidades
+## Arquitectura del sistema
 
-| Funcionalidad | Estado | Notas |
-|---|---|---|
-| macOS Ventura arrancando | ✅ FUNCIONA | — |
-| Windows 11 arrancando | ✅ FUNCIONA | Reinstalado desde cero |
-| Dual boot con OpenCore | ✅ FUNCIONA | Sin necesidad de USB |
-| Trackpad con gestos | ✅ FUNCIONA | ELAN I2C |
-| Audio | ✅ FUNCIONA | Intel Smart Sound |
-| Control de brillo | ✅ FUNCIONA | — |
-| Batería | ✅ FUNCIONA | SMCBatteryManager |
-| Internet por cable | ✅ FUNCIONA | Adaptador USB-RJ45 |
-| WiFi | ❌ NO FUNCIONA | Realtek 8821CE incompatible |
+### Flujo de arranque
 
----
+```mermaid
+flowchart LR
+    A([Power ON]) --> B[UEFI · ASUS X515JAB.310]
+    B --> C[BOOTx64.efi]
+    C --> D[OpenCore 0.8.8]
+    D --> E{Menú de arranque}
+    E -->|Selección macOS| F[macOS Ventura 13\ndisk0s4 · APFS · 314 GB]
+    E -->|Selección Windows| G[Windows 11\ndisk0s3 · NTFS · 197 GB]
 
-## 📅 Día 1 — Jueves 19 de Marzo
-
-### Virtualización en VMware Workstation 17
-
-Como punto de partida, se virtualizó macOS Ventura en VMware para familiarizarse con el entorno antes de la instalación real.
-
-**Configuración de la VM:**
-
-| Parámetro | Valor |
-|---|---|
-| SO Guest | macOS 13 (Ventura) |
-| CPUs | 8 Cores |
-| RAM | 8192 MB (8 GB) |
-| Disco | 150 GB SATA |
-| Firmware | EFI |
-
-Fue necesario modificar el archivo `.vmx` manualmente añadiendo:
-```
-smc.version = "0"
-firmware = "EFI"
+    style A fill:#1a1a1a,color:#fff
+    style D fill:#0a84ff,color:#fff
+    style F fill:#1d1d1f,color:#fff
+    style G fill:#0078d4,color:#fff
 ```
 
-Se probaron múltiples ISOs antes de encontrar una funcional (ISO de Sequoia 15.2 corrupta, VMDK con `Info.plist` vacío causando el error `OC: Grabbed zero system-id for SB`).
-
-### Preparación del USB con OpenCore
-
-**EFI utilizada:** [Bhavinjain260/Asus-Vivobook15-X515JA-Opencore](https://github.com/Bhavinjain260/Asus-Vivobook15-X515JA-Opencore)
-
-**Kexts principales:**
-
-| Kext | Función |
-|---|---|
-| `Lilu.kext` | Base requerida por todos los demás |
-| `VirtualSMC.kext` | Simula el chip SMC de los Mac reales |
-| `WhateverGreen.kext` | Soporte gráfico Intel Iris Plus |
-| `AppleALC.kext` | Audio Intel Smart Sound |
-| `VoodooI2C.kext` | Trackpad ELAN 1200 I2C |
-| `AsusSMC.kext` | Teclas de función especiales del ASUS |
-| `SMCBatteryManager.kext` | Gestión y porcentaje de batería |
-
-**Herramientas convencionales que fallaron con macOS:**
-- ❌ **Ventoy** — Error `Invalid ISO size`
-- ❌ **balenaEtcher** — Error `Missing partition table`
-- ❌ **Rufus** — Error `Tipo de imagen no soportada`
-
-**Solución:** Estructura manual del USB con `diskpart` + `DiskGenius` + `macrecovery.py`:
-
-```bash
-# Descargar recovery directamente de los servidores de Apple
-python macrecovery.py -b Mac-4B682C642B45593E -m 00000000000000000 download
-```
-
-> El resultado fue un `BaseSystem.dmg` de 673 MB verificado con su `chunklist`.
-
-**Correcciones críticas en `config.plist`:**
-
-```xml
-SystemUUID = 2168A42A-0E20-4F75-9569-B4340F04FE56
-SystemSerialNumber = C02849302QXGPGXAA
-MLB = C02849302QXGPGXAB
-SecureBootModel = Disabled
-DmgLoading = Any
-boot-args = keepsyms=1 igfxfw=2 -noDC9 dc6config=0 -v
-```
-
-> ⚠️ **Obstáculo del día:** La instalación de macOS requiere internet. El portátil tiene WiFi Realtek incompatible y sin entrada RJ45. Se realizó pedido urgente de adaptador USB-RJ45 en Amazon a las 23:30.
-
----
-
-## 📅 Día 2 — Viernes 20 de Marzo
-
-### Instalación de macOS Ventura
-
-Con el adaptador RJ45 llegado por la mañana, se arrancó el portátil desde el USB y se accedió al menú de OpenCore.
-
-**Esquema de particiones final:**
-
-| Partición | Contenido | Tamaño |
-|---|---|---|
-| disk0s1 | EFI System Partition (FAT32) | 272.6 MB |
-| disk0s2 | Microsoft Reserved | 16.8 MB |
-| disk0s3 | Windows 11 (NTFS) | 197.1 GB |
-| disk0s4 | Macintosh HD (APFS) | 314.7 GB |
-
-La instalación tardó ~45 minutos con múltiples reinicios automáticos descargando todo desde los servidores de Apple.
-
-**Hardware funcionando tras la instalación:** CPU, GPU Intel Iris Plus, trackpad ELAN con gestos, audio Intel Smart Sound, control de brillo y batería. ✅
-
-### Transferencia de OpenCore al disco interno
-
-```bash
-sudo diskutil mount disk0s1
-sudo cp -r /Volumes/NO\ NAME/EFI /Volumes/SYSTEM/
-# Verificación:
-ls /Volumes/SYSTEM/EFI/
-# Resultado: Boot  Microsoft  OC
-```
-
-A partir de este momento, el portátil arrancaba directamente sin necesidad del USB externo.
-
-### 🔴 Crisis 1: Sistema completamente bloqueado
-
-Al intentar instalar el kext WiFi `AirportItlwm`, el kext se copió con estructura interna incompleta (faltaba `Contents/Info.plist`). Resultado:
+### Esquema de particiones
 
 ```
-OC: Plist Kexts/AirportItlwm.kext/Contents/Info.plist is missing for injected kext
-Halting on critical error
+┌──────────────────────────────────────────────────── SSD NVMe 512 GB ────┐
+│  disk0s1        │  disk0s2   │    disk0s3           │    disk0s4         │
+│  EFI (FAT32)    │  MS Rsvd   │    Windows 11         │    Macintosh HD    │
+│  272.6 MB       │  16.8 MB   │    197.1 GB (NTFS)    │    314.7 GB (APFS) │
+│  OpenCore 0.8.8 │            │                       │                    │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Consecuencia:** Ni macOS ni Windows arrancaban. El portátil era completamente inutilizable.
-
-### 🔴 Crisis 2: Windows también roto
-
-OpenCore bloqueaba todos los sistemas operativos. El único acceso era a través de `OpenShell.efi`.
-
-### Recuperación vía Terminal de Recovery
-
-```bash
-# Desde la Terminal del recovery de macOS:
-sudo diskutil mount disk0s1
-sudo rm -rf /Volumes/SYSTEM/EFI/OC/Kexts/AirportItlwm.kext
-```
-
-> ✅ macOS recuperado. ❌ Windows irrecuperable — gestor de arranque corrupto. Fin del día: 3:00 AM.
-
----
-
-## 📅 Día 3 — Sábado 21 de Marzo
-
-### Reinstalación de Windows 11
-
-Con Windows completamente inutilizable, fue necesario reinstalarlo desde cero. El proceso supuso ~3-4 horas de pérdida: instalación, activación, aplicaciones y traspaso de archivos personales.
-
-### Batalla con el WiFi
-
-Esta vez, conociendo el error anterior, se verificó la estructura del kext antes de copiarlo:
-
-```
-AirportItlwm.kext/
-└── Contents/
-    ├── Info.plist   ← CRÍTICO: debe existir
-    └── MacOS/
-        └── AirportItlwm   ← Ejecutable binario
-```
-
-El kext se instaló correctamente y el WiFi apareció en Preferencias del Sistema, pero:
-
-```bash
-networksetup -setairportpower en0 on
-# Resultado: You cannot set Wi-Fi power because all AirPort network services are disabled.
-```
-
-> **Causa raíz:** `AirportItlwm` está diseñado para chips **WiFi Intel**. El portátil ASUS tiene un chip **Realtek 8821CE** que es incompatible con macOS independientemente del kext instalado.
-
----
-
-## 🔧 Aspectos Técnicos
-
-### Estructura de OpenCore en la partición EFI
+### Estructura de la EFI
 
 ```
 EFI/
 ├── BOOT/
-│   └── BOOTx64.efi          ← Punto de entrada EFI
+│   └── BOOTx64.efi              ← Punto de entrada del firmware UEFI
 └── OC/
-    ├── OpenCore.efi          ← Bootloader principal
-    ├── config.plist          ← Configuración completa
-    ├── ACPI/                 ← Tablas ACPI personalizadas (SSDTs)
-    ├── Drivers/              ← Drivers EFI
-    │   ├── AudioDxe.efi
-    │   ├── HfsPlus.efi
-    │   ├── OpenCanopy.efi
-    │   └── OpenRuntime.efi
-    ├── Kexts/                ← Extensiones del kernel (30+ kexts)
-    │   ├── Lilu.kext
-    │   ├── VirtualSMC.kext
-    │   ├── WhateverGreen.kext
-    │   └── ...
-    ├── Resources/            ← Temas visuales
+    ├── OpenCore.efi             ← Bootloader principal
+    ├── config.plist             ← Configuración completa (XML)
+    ├── ACPI/                    ← SSDTs para corrección de hardware
+    ├── Drivers/
+    │   ├── HfsPlus.efi          ← Lectura de particiones HFS+/APFS
+    │   ├── OpenRuntime.efi      ← Gestión de memoria y NVRAM
+    │   ├── AudioDxe.efi         ← Audio en el menú de arranque
+    │   └── OpenCanopy.efi       ← Interfaz gráfica del menú
+    ├── Kexts/                   ← 30+ extensiones del kernel
+    │   ├── Lilu.kext            ← Base: requerida por todos los demás
+    │   ├── VirtualSMC.kext      ← Simula el chip SMC de los Mac reales
+    │   ├── WhateverGreen.kext   ← Parches gráficos Intel Iris Plus
+    │   ├── AppleALC.kext        ← Audio Intel Smart Sound (layout-id 21)
+    │   ├── VoodooI2C.kext       ← Controlador base I2C
+    │   ├── VoodooI2CHID.kext    ← Trackpad ELAN 1200 con gestos
+    │   ├── AsusSMC.kext         ← Teclas Fn específicas del ASUS
+    │   └── SMCBatteryManager    ← Batería y estado de carga
     └── Tools/
-        └── OpenShell.efi     ← Herramienta de recuperación de emergencia
+        └── OpenShell.efi        ← Shell EFI de emergencia (crítico)
 ```
 
-### PlatformInfo — Identidad del Mac simulado
-
-| Campo | Valor |
-|---|---|
-| SystemProductName | MacBookAir9,1 (MacBook Air 2020 Intel) |
-| SystemSerialNumber | C02849302QXGPGXAA |
-| MLB | C02849302QXGPGXAB |
-| SystemUUID | 2168A42A-0E20-4F75-9569-B4340F04FE56 |
-| SecureBootModel | Disabled |
-
-> Se eligió `MacBookAir9,1` por ser el modelo más compatible para hardware Ice Lake: el MacBook Air 2020 con Intel usa exactamente el mismo CPU i7-1065G7.
-
 ---
 
-## 📚 Lecciones Aprendidas
+## Decisiones técnicas
 
-1. **Siempre hacer copia de seguridad del `config.plist`** antes de cualquier modificación
-2. **Verificar la estructura interna de los kexts** antes de copiarlos a la EFI
-3. macOS requiere internet para instalarse — **preparar el adaptador ethernet con antelación**
-4. **`OpenShell.efi` es una herramienta de emergencia invaluable** para recuperar sistemas bloqueados
-5. La creación de USB de macOS desde Windows requiere **`macrecovery.py`**, no herramientas convencionales
-6. `SecureBootModel` debe estar en `Disabled` para instalaciones Hackintosh
-7. Ante un sistema bloqueado, la **paciencia y el método** son más importantes que la velocidad
+> Esta sección es el núcleo del proyecto. Cada decisión fue evaluada, y cada alternativa descartada tiene un motivo técnico concreto.
 
----
+### ¿Por qué OpenCore y no Clover?
 
-## 🛠 Herramientas Utilizadas
-
-| Herramienta | Uso | Resultado |
+| Criterio | OpenCore 0.8.8 | Clover |
 |---|---|---|
-| VMware Workstation 17 | Virtualización de macOS | ✅ Éxito |
-| VMware Unlocker | Habilitar soporte macOS en VMware | ✅ Éxito |
-| DiskGenius | Gestión de particiones EFI | ✅ Éxito |
-| macrecovery.py | Descarga del recovery de Apple | ✅ Éxito |
-| OpenCore 0.8.8 | Bootloader principal | ✅ Éxito |
-| OpenShell.efi | Recuperación de emergencia | ✅ Éxito |
-| balenaEtcher / Rufus | Creación del USB | ❌ Fallo con macOS |
-| Ventoy | Creación del USB | ❌ Fallo con macOS |
-| OCAuxiliaryTools | Edición del config.plist | ⚠️ Uso parcial |
+| Soporte macOS moderno | ✅ Completo | ⚠️ Limitado en Ventura+ |
+| Inyección de kexts | ✅ En memoria, sin tocar el sistema | ❌ Modifica archivos del sistema |
+| Mantenimiento activo | ✅ Actualizaciones frecuentes | ⚠️ Desarrollo reducido |
+| Soporte SecureBootModel | ✅ Nativo | ❌ Sin soporte |
+| Documentación actualizada | ✅ Dortania Guide activo | ⚠️ Desactualizada |
+
+**Decisión:** OpenCore es el estándar actual para Hackintosh moderno. Clover fue descartado por su modelo de inyección invasivo y falta de soporte para Ventura.
 
 ---
 
-## 🔗 Referencias
+### ¿Por qué SMBIOS MacBookAir9,1?
 
-### Repositorios de GitHub
-- [Bhavinjain260/Asus-Vivobook15-X515JA-Opencore](https://github.com/Bhavinjain260/Asus-Vivobook15-X515JA-Opencore) — EFI principal utilizada
-- [acidanthera/OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) — Proyecto OpenCore oficial
-- [OpenIntelWireless/itlwm](https://github.com/OpenIntelWireless/itlwm) — Kexts WiFi Intel para macOS
-- [paolo-projects/auto-unlocker](https://github.com/paolo-projects/auto-unlocker) — Unlocker de VMware
+El SMBIOS define qué modelo de Mac simula el sistema ante macOS. Una elección incorrecta causa kernel panics, problemas de energía y funciones incompatibles con el hardware real.
+
+**MacBookAir9,1 = MacBook Air 2020 (Intel)**
+
+- Usa exactamente el mismo CPU: **Intel Core i7-1065G7 (Ice Lake)**
+- Comparte la misma GPU integrada: **Intel Iris Plus Graphics**
+- Las tablas de energía y perfiles de rendimiento coinciden con el hardware del portátil
+
+| SMBIOS evaluado | Motivo del descarte |
+|---|---|
+| `MacBookPro16,2` | CPU diferente, perfiles de energía incorrectos para Ice Lake |
+| `MacBookAir8,2` | Whiskey Lake (8ª gen) — generación anterior, incompatible |
+| `MacBookAir9,1` | ✅ Elegido — mismo CPU, misma GPU, misma generación |
+
+---
+
+### ¿Por qué macrecovery.py y no Etcher/Rufus/Ventoy?
+
+Las imágenes de macOS usan el sistema de archivos **HFS+/APFS**, que Windows no puede leer ni escribir de forma nativa. Las herramientas convencionales asumen FAT32 o NTFS y fallan.
+
+| Herramienta | Error | Causa |
+|---|---|---|
+| Ventoy | `Invalid ISO size` | No reconoce el formato de imagen de macOS |
+| balenaEtcher | `Missing partition table` | Las ISOs de macOS no tienen tabla MBR estándar |
+| Rufus | `Tipo de imagen no soportada` | Sin soporte para HFS+/APFS |
+
+**Solución:** `macrecovery.py` (herramienta oficial de OpenCore) descarga el recovery directamente de los servidores de Apple:
+
+```bash
+python macrecovery.py -b Mac-4B682C642B45593E -m 00000000000000000 download
+# Resultado: BaseSystem.dmg (673 MB) + BaseSystem.chunklist verificado
+```
+
+> Apple bloquea descargas desde IPs externas con error 403. Se probaron múltiples Board IDs hasta encontrar uno válido para Ventura.
+
+---
+
+### ¿Por qué el WiFi no funciona? (y no es un error de configuración)
+
+El portátil tiene un chip **Realtek 8821CE**. El único kext de WiFi disponible para Hackintosh, `AirportItlwm`, pertenece al proyecto [OpenIntelWireless](https://github.com/OpenIntelWireless/itlwm) y **solo soporta chips Intel**.
+
+La razón es estructural: Apple utiliza en sus Mac una pila de drivers WiFi propia basada en chips **Broadcom** (modelos anteriores) e **Intel** (modelos recientes). Realtek nunca ha formado parte del ecosistema Apple. No existe ningún kext con soporte para el 8821CE. No es un problema de versión ni de configuración — es una **incompatibilidad a nivel de arquitectura de drivers**.
+
+**Próximos pasos:**
+- Adaptador USB WiFi compatible con macOS (Ralink RT5370 o similar)
+- Investigar sustitución física del módulo WiFi por uno Intel compatible
+
+---
+
+## Contribución personal
+
+Este proyecto partió de una EFI base pública. Lo siguiente es lo que se realizó sobre esa base:
+
+- **Análisis de compatibilidad** del hardware específico del portátil mediante MSInfo32 antes de comenzar
+- **Configuración manual del `config.plist`**: SystemUUID, SystemSerialNumber, MLB, SecureBootModel, DmgLoading y boot-args
+- **Preparación del USB sin herramientas automáticas**: diskpart + DiskGenius + macrecovery.py
+- **Particionado en caliente** del disco con Windows 11 instalado, sin pérdida de datos
+- **Diagnóstico y resolución de dos crisis críticas** que dejaron todos los sistemas operativos inutilizables
+- **Recuperación vía OpenShell.efi** navegando el sistema de archivos EFI desde una shell de emergencia con comandos limitados
+- **Transferencia de OpenCore al disco interno** eliminando la dependencia del USB externo
+- **Reinstalación completa de Windows 11** preservando la partición EFI con OpenCore intacta
+
+---
+
+## Resolución de crisis
+
+### Crisis 1 — Sistema completamente bloqueado
+
+**Cuándo:** Viernes, 23:00  
+**Síntoma:**
+```
+OC: Plist Kexts/AirportItlwm.kext/Contents/Info.plist is missing
+Halting on critical error
+```
+
+**Causa raíz:** El kext `AirportItlwm` fue copiado con estructura interna incompleta. Un kext de macOS es un bundle con estructura obligatoria:
+
+```
+AirportItlwm.kext/
+└── Contents/
+    ├── Info.plist        ← CRÍTICO: descriptor del kext. Sin él, OpenCore aborta el arranque.
+    └── MacOS/
+        └── AirportItlwm  ← Ejecutable binario
+```
+
+Sin `Info.plist`, OpenCore no puede inyectar el kext y detiene el arranque. El bloqueo afectó también a Windows, ya que OpenCore no llegaba a ceder el control al gestor de arranque de Microsoft.
+
+**Solución:** OpenShell.efi → Terminal del recovery de macOS → eliminación del kext:
+
+```bash
+sudo diskutil mount disk0s1
+sudo rm -rf /Volumes/SYSTEM/EFI/OC/Kexts/AirportItlwm.kext
+```
+
+---
+
+### Crisis 2 — Gestor de arranque de Windows corrupto
+
+**Cuándo:** Sábado, 09:00  
+**Causa:** La crisis anterior dejó el BCD (Boot Configuration Data) de Windows en estado inconsistente. `bootrec /fixmbr` y `bootrec /rebuildbcd` no recuperaron el sistema.  
+**Solución:** Reinstalación limpia de Windows 11 sobre la partición existente (`disk0s3`), preservando la partición EFI con OpenCore intacta en `disk0s1`.
+
+---
+
+## Resultado final
+
+| Funcionalidad | Estado | Notas |
+|---|---|:---:|
+| macOS Ventura arrancando | ✅ | Nativo, sin USB externo |
+| Windows 11 arrancando | ✅ | Dual boot con OpenCore |
+| CPU Intel i7-1065G7 | ✅ | Todos los núcleos reconocidos |
+| GPU Intel Iris Plus | ✅ | Aceleración gráfica completa |
+| Trackpad ELAN I2C | ✅ | Gestos multitouch nativos |
+| Audio Intel Smart Sound | ✅ | Entrada y salida de audio |
+| Control de brillo | ✅ | Teclas Fn operativas |
+| Batería y gestión energía | ✅ | Porcentaje y ciclos correctos |
+| Internet por cable | ✅ | Adaptador USB-RJ45 |
+| WiFi Realtek 8821CE | ❌ | Sin driver disponible para macOS |
+
+---
+
+## Lecciones técnicas
+
+1. **Verificar la estructura interna de los kexts** antes de copiarlos — un kext incompleto bloquea todo el sistema
+2. **`OpenShell.efi` debe estar siempre en la EFI de producción** — es el único acceso cuando todo lo demás falla
+3. **`SecureBootModel = Disabled`** es obligatorio — Secure Boot de Apple es incompatible con hardware no certificado
+4. **`DmgLoading = Any`** es necesario para cargar BaseSystem.dmg descargado con macrecovery.py
+5. **Hacer copia del `config.plist` antes de cualquier cambio** — un error en este archivo paraliza el sistema completo
+6. **La creación de USB de macOS desde Windows requiere métodos manuales** — HFS+/APFS es invisible para las herramientas convencionales
+7. **Ante un sistema bloqueado, método antes que velocidad** — el análisis del error antes de actuar ahorra horas
+
+---
+
+## Documentación detallada
+
+El diario técnico completo con decisiones hora a hora, errores completos, comandos exactos y contexto de cada problema está en:
+
+📄 [`/docs/installation-log.md`](docs/installation-log.md)
+
+---
+
+## Referencias
+
+### EFI base utilizada
+- [Bhavinjain260/Asus-Vivobook15-X515JA-Opencore](https://github.com/Bhavinjain260/Asus-Vivobook15-X515JA-Opencore)
+
+### Proyectos open source utilizados
+- [acidanthera/OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) — OpenCore oficial
+- [OpenIntelWireless/itlwm](https://github.com/OpenIntelWireless/itlwm) — Kexts WiFi Intel
+- [acidanthera/Lilu](https://github.com/acidanthera/Lilu) — Kext base
+- [acidanthera/WhateverGreen](https://github.com/acidanthera/WhateverGreen) — Parches gráficos
+- [paolo-projects/auto-unlocker](https://github.com/paolo-projects/auto-unlocker) — VMware Unlocker
 
 ### Documentación
-- [dortania.github.io/OpenCore-Install-Guide](https://dortania.github.io/OpenCore-Install-Guide/) — Guía oficial de instalación
+- [Dortania OpenCore Install Guide](https://dortania.github.io/OpenCore-Install-Guide/)
+- [OpenCore Configuration Reference](https://github.com/acidanthera/OpenCorePkg/blob/master/Docs/Configuration.pdf)
 
 ---
 
-> **Proyecto completado:** 22 de marzo de 2026  
-> macOS Ventura 13 + Windows 11 · ASUS VivoBook X515JA · OpenCore 0.8.8  
-> *Autor: Alejandro Vázquez*
+<div align="center">
+
+**Proyecto completado · 22 de marzo de 2026**
+
+`macOS Ventura 13` · `Windows 11` · `ASUS VivoBook X515JA` · `OpenCore 0.8.8`
+
+*Alejandro Vázquez · 1º ASIR*
+
+</div>
