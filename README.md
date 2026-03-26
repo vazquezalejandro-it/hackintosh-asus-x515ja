@@ -2,20 +2,32 @@
 
 # Hackintosh · ASUS VivoBook X515JA
 
-**macOS Ventura 13 corriendo nativamente en hardware no Apple**  
+**macOS Ventura 13 corriendo nativamente en hardware no Apple**
 Dual Boot con Windows 11 · Un único disco SSD de 512 GB · Sin USB externo
 
 ![macOS](https://img.shields.io/badge/macOS-Ventura_13-black?style=for-the-badge&logo=apple&logoColor=white)
 ![OpenCore](https://img.shields.io/badge/OpenCore-0.8.8-blue?style=for-the-badge)
 ![Estado](https://img.shields.io/badge/Estado-Funcional-success?style=for-the-badge)
 ![CPU](https://img.shields.io/badge/CPU-Intel_Ice_Lake-0071C5?style=for-the-badge&logo=intel&logoColor=white)
-![Licencia](https://img.shields.io/badge/Uso-Solo_educativo-orange?style=for-the-badge)
+![Uso](https://img.shields.io/badge/Uso-Solo_educativo-orange?style=for-the-badge)
 
 </div>
 
 ---
 
 > ⚠️ **Aviso legal:** La instalación de macOS en hardware no oficial de Apple viola su EULA. Este repositorio tiene carácter **exclusivamente educativo y de documentación técnica personal.**
+
+---
+
+## Perfil técnico
+
+Estudiante de 1º ASIR con experiencia práctica autónoma en:
+
+- Diagnóstico y análisis de compatibilidad de hardware
+- Gestión de arranque UEFI/EFI y configuración de bootloaders
+- Resolución de incidencias críticas en sistemas bloqueados
+- Virtualización avanzada en entornos multi-OS
+- Documentación técnica completa de procesos y decisiones
 
 ---
 
@@ -141,17 +153,13 @@ EFI/
 
 El SMBIOS define qué modelo de Mac simula el sistema ante macOS. Una elección incorrecta causa kernel panics, problemas de energía y funciones incompatibles con el hardware real.
 
-**MacBookAir9,1 = MacBook Air 2020 (Intel)**
-
-- Usa exactamente el mismo CPU: **Intel Core i7-1065G7 (Ice Lake)**
-- Comparte la misma GPU integrada: **Intel Iris Plus Graphics**
-- Las tablas de energía y perfiles de rendimiento coinciden con el hardware del portátil
-
 | SMBIOS evaluado | Motivo del descarte |
 |---|---|
 | `MacBookPro16,2` | CPU diferente, perfiles de energía incorrectos para Ice Lake |
 | `MacBookAir8,2` | Whiskey Lake (8ª gen) — generación anterior, incompatible |
-| `MacBookAir9,1` | ✅ Elegido — mismo CPU, misma GPU, misma generación |
+| `MacBookAir9,1` | ✅ Elegido — mismo CPU i7-1065G7, misma GPU Iris Plus, misma generación |
+
+El MacBook Air 2020 con Intel usa exactamente el mismo procesador que el portátil ASUS, lo que garantiza que las tablas de energía y los perfiles de rendimiento sean correctos.
 
 ---
 
@@ -190,14 +198,14 @@ La razón es estructural: Apple utiliza en sus Mac una pila de drivers WiFi prop
 
 ## Contribución personal
 
-Este proyecto partió de una EFI base pública. Lo siguiente es lo que se realizó sobre esa base:
+Este proyecto partió de una EFI base pública. Lo que se realizó sobre esa base:
 
-- **Análisis de compatibilidad** del hardware específico del portátil mediante MSInfo32 antes de comenzar
+- **Análisis de compatibilidad** del hardware específico mediante MSInfo32 antes de comenzar
 - **Configuración manual del `config.plist`**: SystemUUID, SystemSerialNumber, MLB, SecureBootModel, DmgLoading y boot-args
 - **Preparación del USB sin herramientas automáticas**: diskpart + DiskGenius + macrecovery.py
 - **Particionado en caliente** del disco con Windows 11 instalado, sin pérdida de datos
 - **Diagnóstico y resolución de dos crisis críticas** que dejaron todos los sistemas operativos inutilizables
-- **Recuperación vía OpenShell.efi** navegando el sistema de archivos EFI desde una shell de emergencia con comandos limitados
+- **Recuperación vía OpenShell.efi** navegando el sistema de archivos EFI desde una shell de emergencia
 - **Transferencia de OpenCore al disco interno** eliminando la dependencia del USB externo
 - **Reinstalación completa de Windows 11** preservando la partición EFI con OpenCore intacta
 
@@ -207,7 +215,8 @@ Este proyecto partió de una EFI base pública. Lo siguiente es lo que se realiz
 
 ### Crisis 1 — Sistema completamente bloqueado
 
-**Cuándo:** Viernes, 23:00  
+**Cuándo:** Viernes, 23:00
+
 **Síntoma:**
 ```
 OC: Plist Kexts/AirportItlwm.kext/Contents/Info.plist is missing
@@ -219,14 +228,14 @@ Halting on critical error
 ```
 AirportItlwm.kext/
 └── Contents/
-    ├── Info.plist        ← CRÍTICO: descriptor del kext. Sin él, OpenCore aborta el arranque.
+    ├── Info.plist        ← CRÍTICO: sin él, OpenCore aborta el arranque
     └── MacOS/
         └── AirportItlwm  ← Ejecutable binario
 ```
 
-Sin `Info.plist`, OpenCore no puede inyectar el kext y detiene el arranque. El bloqueo afectó también a Windows, ya que OpenCore no llegaba a ceder el control al gestor de arranque de Microsoft.
+El bloqueo afectó también a Windows: OpenCore no llegaba a ceder el control al gestor de arranque de Microsoft.
 
-**Solución:** OpenShell.efi → Terminal del recovery de macOS → eliminación del kext:
+**Solución:** OpenShell.efi → Terminal del recovery de macOS:
 
 ```bash
 sudo diskutil mount disk0s1
@@ -237,9 +246,11 @@ sudo rm -rf /Volumes/SYSTEM/EFI/OC/Kexts/AirportItlwm.kext
 
 ### Crisis 2 — Gestor de arranque de Windows corrupto
 
-**Cuándo:** Sábado, 09:00  
-**Causa:** La crisis anterior dejó el BCD (Boot Configuration Data) de Windows en estado inconsistente. `bootrec /fixmbr` y `bootrec /rebuildbcd` no recuperaron el sistema.  
-**Solución:** Reinstalación limpia de Windows 11 sobre la partición existente (`disk0s3`), preservando la partición EFI con OpenCore intacta en `disk0s1`.
+**Cuándo:** Sábado, 09:00
+
+**Causa:** La crisis anterior dejó el BCD (Boot Configuration Data) de Windows en estado inconsistente. `bootrec /fixmbr` y `bootrec /rebuildbcd` no recuperaron el sistema.
+
+**Solución:** Reinstalación limpia de Windows 11 sobre `disk0s3` (197 GB), preservando la partición EFI con OpenCore intacta en `disk0s1`.
 
 ---
 
@@ -260,6 +271,18 @@ sudo rm -rf /Volumes/SYSTEM/EFI/OC/Kexts/AirportItlwm.kext
 
 ---
 
+## Qué haría diferente hoy
+
+Reflexiones técnicas tras completar el proyecto:
+
+- **Verificar siempre la estructura interna de los kexts antes de copiarlos.** El error de `AirportItlwm` costó varias horas de recuperación y una reinstalación de Windows. Un simple `ls kext/Contents/` antes de copiar lo hubiera evitado.
+- **Hacer una copia del `config.plist` antes de cualquier cambio.** Modificar este archivo sin backup en un sistema en producción es innecesariamente arriesgado.
+- **Investigar la compatibilidad WiFi antes de empezar, no durante.** El Realtek 8821CE es incompatible con macOS por arquitectura. Saberlo antes hubiera permitido preparar un adaptador USB WiFi desde el principio.
+- **Preparar el adaptador ethernet antes del día de instalación.** Perder el primer día por falta de un cable de red es un error de planificación evitable.
+- **Automatizar la validación de la EFI** con un script que compruebe la estructura de kexts y la integridad del `config.plist` antes de cada reinicio.
+
+---
+
 ## Lecciones técnicas
 
 1. **Verificar la estructura interna de los kexts** antes de copiarlos — un kext incompleto bloquea todo el sistema
@@ -274,7 +297,7 @@ sudo rm -rf /Volumes/SYSTEM/EFI/OC/Kexts/AirportItlwm.kext
 
 ## Documentación detallada
 
-El diario técnico completo con decisiones hora a hora, errores completos, comandos exactos y contexto de cada problema está en:
+El diario técnico completo con decisiones hora a hora, errores completos y comandos exactos está en:
 
 📄 [`/docs/installation-log.md`](docs/installation-log.md)
 
